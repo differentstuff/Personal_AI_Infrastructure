@@ -1,4 +1,6 @@
-﻿# PAI Statusline for Windows PowerShell 7
+# PAI Statusline for Windows PowerShell 7
+
+$CURRENCY = "$"
 
 # Get Digital Assistant configuration from environment
 $DA_NAME = if ($env:DA) { $env:DA } else { "Assistant" } # Assistant name
@@ -19,7 +21,7 @@ $LOCK_FILE = "$env:TEMP\.claude_ccusage.lock"
 $CACHE_AGE = 30 # 30 seconds for more real-time updates
 
 # Count items from specified directories
-$claude_dir = if ($env:PAI_DIR) { $env:PAI_DIR } else { "$env:USERPROFILE\.claude" }
+$claude_dir = if ($env:PAI_DIR) { "$env:PAI_DIR" } else { "$env:USERPROFILE\.claude" }
 $commands_count = 0
 $mcps_count = 0
 $fobs_count = 0
@@ -63,7 +65,7 @@ $daily_cost = ""
 # Check if cache exists and load it
 if (Test-Path $CACHE_FILE) {
     # Always load cache data first (if it exists)
-    . $CACHE_FILE
+    . $CACHE_FILE | Out-Null
 }
 
 # If cache is stale, missing, or we have no data, update it SYNCHRONOUSLY with timeout
@@ -87,25 +89,20 @@ if ($cache_needs_update) {
             if (Get-Command bunx -ErrorAction SilentlyContinue) {
                 # Run ccusage with a timeout (5 seconds for faster updates)
                 try {
-                    $ccusage_output = bunx ccusage 2>$null | Select-String "Total" | Select-Object -First 1
-                    
-                    if ($ccusage_output) {
-                        # Extract input/output tokens, removing commas and ellipsis
-                        $parts = $ccusage_output -split '\|'
-                        if ($parts.Count -ge 9) {
-                            $daily_input = $parts[3] -replace '[^0-9]', ''
-                            $daily_output = $parts[4] -replace '[^0-9]', ''
-                            $daily_cost = $parts[8] -replace '^\s*|\s*$', ''
-                            
-                            if ($daily_input -and $daily_output) {
-                                $daily_total = [int]$daily_input + [int]$daily_output
-                                $daily_tokens = "{0:N0}" -f $daily_total
-                                
-                                # Write to cache file
-                                "daily_tokens=`"$daily_tokens`"" | Out-File -FilePath $CACHE_FILE -Encoding utf8
-                                "daily_cost=`"$daily_cost`"" | Out-File -FilePath $CACHE_FILE -Encoding utf8 -Append
-                                "cache_updated=`"$(Get-Date)`"" | Out-File -FilePath $CACHE_FILE -Encoding utf8 -Append
-                            }
+                    $ccusage_json = bunx ccusage --json 2>$null | ConvertFrom-Json
+
+                    if ($ccusage_json -and $ccusage_json.daily) {
+                        # Get today's usage from the daily array
+                        $today_data = $ccusage_json.daily[0]
+
+                        if ($today_data) {
+                            $daily_tokens = "{0:N0}" -f $today_data.totalTokens
+                            $daily_cost = $CURRENCY + ("{0:N2}" -f $today_data.totalCost)
+
+                            # Write to cache file
+                            "daily_tokens=`"$daily_tokens`"" | Out-File -FilePath $CACHE_FILE -Encoding utf8
+                            "daily_cost=`"$daily_cost`"" | Out-File -FilePath $CACHE_FILE -Encoding utf8 -Append
+                            "cache_updated=`"$(Get-Date)`"" | Out-File -FilePath $CACHE_FILE -Encoding utf8 -Append
                         }
                     }
                 } catch {
@@ -131,7 +128,7 @@ if ($cache_needs_update) {
         
         # Just use cached data if available
         if (Test-Path $CACHE_FILE) {
-            . $CACHE_FILE
+            . $CACHE_FILE | Out-Null
         }
     }
 }
@@ -224,5 +221,4 @@ Write-Host "${LINE2_PRIMARY}Active MCPs${RESET}${LINE2_PRIMARY}${SEPARATOR_COLOR
 $tokens_display = if ($daily_tokens) { $daily_tokens } else { "N/A" }
 $cost_display = if ($daily_cost) { $daily_cost } else { "N/A" }
 
-Write-Host "${LINE3_PRIMARY}* Total Tokens${RESET}${LINE3_PRIMARY}${SEPARATOR_COLOR}: ${RESET}${LINE3_ACCENT}${tokens_display}${RESET}${LINE3_PRIMARY} Total Cost${RESET}${LINE3_PRIMARY}${SEPARATOR_COLOR}: ${RESET}${COST_COLOR}${cost_display}${RESET}"
-
+Write-Host "${LINE3_PRIMARY}* Total Tokens${RESET}${SEPARATOR_COLOR}: ${RESET}${TOKENS_COLOR}${tokens_display}${RESET}${LINE3_PRIMARY} Total Cost${RESET}${SEPARATOR_COLOR}: ${RESET}${TOKENS_COLOR}${cost_display}${RESET}"
