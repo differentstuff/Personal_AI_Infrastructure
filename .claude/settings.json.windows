@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "MCP_API_KEY": "REDACTED",
+    "DISABLE_INTERLEAVED_THINKING": "true",
+    "DA": "Kai",
+    "PAI_DIR": "%USERPROFILE%\\PAI\\.claude"
+  },
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "MultiEdit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "LS(*)",
+      "WebFetch(domain:*)",
+      "WebSearch",
+      "NotebookRead(*)",
+      "NotebookEdit(*)",
+      "TodoWrite(*)",
+      "ExitPlanMode(*)",
+      "Task(*)",
+      "mcp__*"
+    ],
+    "deny": [
+      "Bash(diskutil partitionDisk)",
+      "Bash(diskutil eraseDisk)",
+      "Bash(diskutil eraseVolume)",
+      "Bash(diskutil reformat)",
+      "Bash(diskutil zeroDisk)",
+      "Bash(diskutil appleRAID)",
+      "Bash(diskutil randomDisk)",
+      "Bash(diskutil coreStorage)",
+      "Bash(diskutil cs)",
+      "Bash(diskutil disableJournal)",
+      "Bash(diskutil resetFusion)",
+      "Bash(diskutil disableOwnership)",
+      "Bash(diskutil apfs deleteContainer)",
+      "Bash(diskutil apfs eraseVolume)",
+      "Bash(diskutil apfs decryptVolume)",
+      "Bash(diskutil apfs changePassphrase)",
+      "Bash(diskutil apfs deleteVolume)",
+      "Bash(diskutil apfs deleteVolumeGroup)",
+      "Bash(diskutil apfs deleteSnapshot)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf $HOME)",
+      "Bash(rm -rf $PAI_HOME)",
+      "Bash(rm -rf $PAI_DIR)",
+      "Bash(sudo rm -rf /)",
+      "Bash(sudo rm -rf /*)",
+      "Bash(fork bomb)",
+      "Bash(dd if=/dev/zero of=/dev/sda)",
+      "Bash(mkfs.ext4 /dev/sda)",
+      "Bash( /dev/sda)",
+      "Bash(> /dev/sda)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [],
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type PreToolUse"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type PostToolUse"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-session-summary.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type SessionEnd"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\update-tab-titles.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type UserPromptSubmit"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\load-core-context.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\initialize-pai-session.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type SessionStart"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\stop-hook.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type Stop"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\subagent-stop-hook.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type SubagentStop"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\context-compression-hook.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}\\hooks\\capture-all-events.ts --event-type PreCompact"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "%USERPROFILE%\\.claude\\statusline-wrapper.bat"
+  },
+  "alwaysThinkingEnabled": true,
+  "feedbackSurveyState": {
+    "lastShownTime": 1754071370324
+  }
+}
