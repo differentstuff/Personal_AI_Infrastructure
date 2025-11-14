@@ -35,7 +35,7 @@ $mcp_names_raw = ""
 if (Test-Path "$claude_dir\.mcp.json") {
     $mcp_data = Get-Content "$claude_dir\.mcp.json" -Raw | ConvertFrom-Json
     $mcp_names_raw = $mcp_data.mcpServers.PSObject.Properties.Name -join " "
-    $mcps_count = $mcp_data.mcpServers.PSObject.Properties.Count
+    $mcps_count = @($mcp_data.mcpServers.PSObject.Properties).Count
 } else {
     $mcps_count = 0
 }
@@ -225,3 +225,4 @@ $tokens_display = if ($daily_tokens) { $daily_tokens } else { "N/A" }
 $cost_display = if ($daily_cost) { $daily_cost } else { "N/A" }
 
 Write-Host "${LINE3_PRIMARY}* Total Tokens${RESET}${LINE3_PRIMARY}${SEPARATOR_COLOR}: ${RESET}${LINE3_ACCENT}${tokens_display}${RESET}${LINE3_PRIMARY} Total Cost${RESET}${LINE3_PRIMARY}${SEPARATOR_COLOR}: ${RESET}${COST_COLOR}${cost_display}${RESET}"
+
